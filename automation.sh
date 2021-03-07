@@ -31,4 +31,20 @@ find /var/log/apache2/ -name "*.log" | tar -cf /tmp/${tar_file_name} -T -
 aws s3 \
 cp /tmp/${myname}-httpd-logs-${timestamp}.tar \
 s3://${s3_bucket}/${myname}-httpd-logs-${timestamp}.tar
-
+tar_file_size=$(wc -c <"/tmp/${tar_file_name}")
+FILE=/var/www/html/inventory.html
+if [[ -f "$FILE" ]]; then
+ echo "$FILE exists."
+ echo -e "httpd-logs \t$timestamp \ttar \t${tar_file_size}" >> /var/www/html/inventory.html
+else
+ echo "$FILE doesn't exists. Creating new with header."
+ echo -e "Log Type \tTime Created \t\tType \tSize" >> /var/www/html/inventory.html
+ echo -e "httpd-logs \t$timestamp \ttar \t${tar_file_size}" >> /var/www/html/inventory.html
+fi
+cronfile=/etc/cron.d/automation
+if [[ -f "$cronfile" ]]; then
+ echo "Cron Job already exists/scheduled"
+else
+ echo "Cron Job not exist/Scheduled, Creating a cron job now"
+ echo "* * * * * root /root/Automation_Project/automation.sh" >> /etc/cron.d/automation
+fi
